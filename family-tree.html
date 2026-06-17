@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Árvore Genealógica</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #1a1612; --surface: #252019; --card: #2e2820; --card-h: #382f24;
+    --border: #4a3f30; --gold: #c9a84c; --gold-dim: #8a6e30;
+    --text: #e8dcc8; --muted: #9e8e75; --danger: #b85c4a;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+  header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface); }
+  header h1 { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 400; color: var(--gold); }
+  #save-status { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.06em; }
+  .layout { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 57px); }
+  #canvas-wrap { flex: 1; position: relative; overflow: auto; background: radial-gradient(ellipse at 20% 30%, rgba(201,168,76,0.04) 0%, transparent 60%), var(--bg); }
+  #svg-canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+  #tree-root { position: relative; min-width: 100%; min-height: 100%; padding: 40px; }
+  .gen-row { display: flex; justify-content: center; gap: 20px; position: relative; }
+  .gen-spacer { height: 70px; }
+  .person-card { position: relative; width: 148px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 12px 12px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s, transform 0.15s; user-select: none; }
+  .person-card:hover { background: var(--card-h); transform: translateY(-2px); }
+  .person-card.selected { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+  .avatar { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; color: #fff; flex-shrink: 0; overflow: hidden; }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .person-name { font-family: 'Playfair Display', serif; font-size: 0.82rem; line-height: 1.3; color: var(--text); margin-bottom: 3px; }
+  .person-years { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.04em; }
+  .gen-badge { position: absolute; top: -8px; right: -8px; width: 18px; height: 18px; border-radius: 50%; font-size: 0.6rem; font-weight: 600; display: flex; align-items: center; justify-content: center; color: #fff; border: 2px solid var(--bg); }
+  .flag-badge { position: absolute; top: -8px; left: -8px; width: 22px; height: 22px; border-radius: 50%; background: var(--surface); border: 2px solid var(--bg); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; }
+  #sidebar { width: 300px; flex-shrink: 0; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+  .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; gap: 12px; color: var(--muted); }
+  .empty-state svg { opacity: 0.3; }
+  .empty-state p { font-size: 0.82rem; line-height: 1.6; }
+  #edit-panel { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .field label { display: block; font-size: 0.7rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+  .field input, .field select { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.82rem; outline: none; transition: border-color 0.2s; }
+  .field input:focus, .field select:focus { border-color: var(--gold-dim); }
+  .field select option { background: var(--card); }
+  .photo-upload-area { position: relative; width: 80px; height: 80px; margin: 0 auto; cursor: pointer; }
+  .photo-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); display: block; }
+  .photo-placeholder { width: 80px; height: 80px; border-radius: 50%; border: 2px dashed var(--gold-dim); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 4px; color: var(--muted); font-size: 0.65rem; text-align: center; }
+  .photo-placeholder:hover { border-color: var(--gold); background: var(--card-h); }
+  .photo-remove { position: absolute; top: -4px; right: -4px; width: 20px; height: 20px; border-radius: 50%; background: var(--danger); color: #fff; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--surface); }
+  .color-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .color-dot { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color 0.15s, transform 0.15s; }
+  .color-dot:hover { transform: scale(1.15); }
+  .color-dot.active { border-color: var(--gold); }
+  .btn-row { display: flex; gap: 8px; }
+  button { font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 500; cursor: pointer; border: none; border-radius: 6px; padding: 8px 14px; transition: opacity 0.15s, background 0.15s; }
+  button:hover { opacity: 0.85; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-add-child { margin: 0 20px 20px; background: var(--card); color: var(--gold); border: 1px dashed var(--gold-dim); width: calc(100% - 40px); padding: 9px; font-size: 0.78rem; text-align: center; }
+  .btn-add-child:hover { background: var(--card-h); }
+  hr.divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+  .relations-section { padding: 0 20px 20px; }
+  .relations-section h3 { font-size: 0.68rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .rel-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--card); border-radius: 6px; margin-bottom: 6px; cursor: pointer; border: 1px solid transparent; transition: border-color 0.15s; font-size: 0.78rem; }
+  .rel-item:hover { border-color: var(--border); }
+  .rel-avatar { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; color: #fff; }
+  .rel-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .rel-name { flex: 1; }
+  .rel-role { font-size: 0.68rem; color: var(--muted); }
+  #toolbar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 32px; padding: 10px 18px; z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+  #toolbar button { background: transparent; color: var(--text); font-size: 0.75rem; padding: 6px 12px; border-radius: 20px; }
+  #toolbar button:hover { background: var(--card); opacity: 1; }
+  #toolbar .sep { width: 1px; height: 20px; background: var(--border); }
+  #toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(10px); background: var(--card); border: 1px solid var(--border); color: var(--text); font-size: 0.78rem; padding: 8px 18px; border-radius: 20px; opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; white-space: nowrap; z-index: 200; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 999; padding: 20px; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px 24px; max-width: 340px; width: 100%; text-align: center; display: flex; flex-direction: column; gap: 14px; }
+  .modal h2 { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--gold); }
+  .modal p { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+  .modal input { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 10px; color: var(--text); font-family: monospace; font-size: 0.85rem; outline: none; width: 100%; text-align: center; }
+  .modal input:focus { border-color: var(--gold-dim); }
+  .btn-gold { background: var(--gold); color: #1a1612; border: none; border-radius: 8px; padding: 11px; font-weight: 600; cursor: pointer; font-size: 0.85rem; font-family: 'Inter', sans-serif; }
+  .btn-muted { background: var(--card); color: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 8px; cursor: pointer; font-size: 0.78rem; font-family: 'Inter', sans-serif; }
+  .tree-id-display { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 1.1rem; letter-spacing: 0.15em; color: var(--gold); font-weight: 700; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🌳 Árvore Genealógica</h1>
+  <span id="save-status">não salvo</span>
+</header>
+<div class="layout">
+  <div id="canvas-wrap">
+    <svg id="svg-canvas"></svg>
+    <div id="tree-root"></div>
+  </div>
+  <aside id="sidebar">
+    <div id="empty-state" class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+        <circle cx="12" cy="7" r="4"/><path d="M5.5 20a6.5 6.5 0 0113 0"/>
+      </svg>
+      <p>Selecione uma pessoa para editar.</p>
+    </div>
+    <div id="edit-panel" style="display:none"></div>
+  </aside>
+</div>
+<div id="toolbar">
+  <button onclick="addRootPerson()">＋ Pessoa</button>
+  <div class="sep"></div>
+  <button onclick="saveToCloud()" style="background:var(--gold);color:#1a1612;border-radius:20px;font-weight:600;">💾 Salvar</button>
+  <button onclick="showOpenModal()">📂 Abrir</button>
+  <div class="sep"></div>
+  <button onclick="exportData()" title="Exportar JSON">↓</button>
+  <button onclick="importData()" title="Importar JSON">↑</button>
+</div>
+<div id="toast"></div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDt-wENFIyBroD3DYHZNIRmhbPOtji2tDg",
+  authDomain: "nakamura-805ab.firebaseapp.com",
+  databaseURL: "https://nakamura-805ab-default-rtdb.firebaseio.com",
+  projectId: "nakamura-805ab",
+  storageBucket: "nakamura-805ab.firebasestorage.app",
+  messagingSenderId: "659443443848",
+  appId: "1:659443443848:web:9ddf35cbd701abbb4b173d"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ── HELPERS ──
+const PALETTE = ['#6b8fa3','#7a9b6e','#a08060','#8a6fa0','#a07080','#5a8080','#9b7a5a'];
+const COUNTRIES = [
+  ['BR','🇧🇷 Brasil'],['PT','🇵🇹 Portugal'],['US','🇺🇸 Estados Unidos'],['JP','🇯🇵 Japão'],
+  ['IT','🇮🇹 Itália'],['ES','🇪🇸 Espanha'],['DE','🇩🇪 Alemanha'],['FR','🇫🇷 França'],
+  ['GB','🇬🇧 Reino Unido'],['AR','🇦🇷 Argentina'],['CN','🇨🇳 China'],['KR','🇰🇷 Coreia do Sul'],
+  ['CA','🇨🇦 Canadá'],['MX','🇲🇽 México'],['IN','🇮🇳 Índia'],['RU','🇷🇺 Rússia'],
+  ['NL','🇳🇱 Países Baixos'],['CH','🇨🇭 Suíça'],['AT','🇦🇹 Áustria'],['BE','🇧🇪 Bélgica'],
+  ['SE','🇸🇪 Suécia'],['NO','🇳🇴 Noruega'],['DK','🇩🇰 Dinamarca'],['FI','🇫🇮 Finlândia'],
+  ['PL','🇵🇱 Polônia'],['GR','🇬🇷 Grécia'],['IE','🇮🇪 Irlanda'],['AU','🇦🇺 Austrália'],
+  ['NZ','🇳🇿 Nova Zelândia'],['ZA','🇿🇦 África do Sul'],['EG','🇪🇬 Egito'],['NG','🇳🇬 Nigéria'],
+  ['AO','🇦🇴 Angola'],['MZ','🇲🇿 Moçambique'],['CV','🇨🇻 Cabo Verde'],['CO','🇨🇴 Colômbia'],
+  ['CL','🇨🇱 Chile'],['PE','🇵🇪 Peru'],['UY','🇺🇾 Uruguai'],['PY','🇵🇾 Paraguai'],
+  ['VE','🇻🇪 Venezuela'],['BO','🇧🇴 Bolívia'],['EC','🇪🇨 Equador'],['CU','🇨🇺 Cuba'],
+  ['TR','🇹🇷 Turquia'],['IL','🇮🇱 Israel'],['LB','🇱🇧 Líbano'],['SY','🇸🇾 Síria'],
+  ['UA','🇺🇦 Ucrânia'],['CZ','🇨🇿 República Tcheca'],['HU','🇭🇺 Hungria'],['RO','🇷🇴 Romênia'],
+  ['HR','🇭🇷 Croácia'],['RS','🇷🇸 Sérvia'],['VN','🇻🇳 Vietnã'],['TH','🇹🇭 Tailândia'],
+  ['PH','🇵🇭 Filipinas'],['ID','🇮🇩 Indonésia'],['MY','🇲🇾 Malásia'],['SG','🇸🇬 Singapura'],
+];
+function flagFor(code) {
+  const c = COUNTRIES.find(x => x[0] === code);
+  return c ? c[1].split(' ')[0] : '';
+}
+function countryNameFor(code) {
+  const c = COUNTRIES.find(x => x[0] === code);
+  return c ? c[1].split(' ').slice(1).join(' ') : '';
+}
+let people = [], selectedId = null, nextId = 1;
+let currentTreeId = localStorage.getItem('arvore_tree_id') || null;
+
+function uid() { return nextId++; }
+function get(id) { return people.find(p => p.id === id); }
+function initials(name) { return name.split(' ').filter(Boolean).map(w=>w[0]).join('').slice(0,2).toUpperCase() || '?'; }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function setStatus(msg) {
+  document.getElementById('save-status').textContent = msg;
+}
+
+function genTreeId() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length: 6}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+
+// ── FIREBASE SAVE / LOAD ──
+window.saveToCloud = async function() {
+  if (!currentTreeId) currentTreeId = genTreeId();
+  setStatus('salvando...');
+  try {
+    // Strip photos to avoid size limits — save separately if needed
+    const payload = { people: people.map(p => ({...p, photo: p.photo ? '__has_photo__' : null})), nextId, photos: {} };
+    people.forEach(p => { if (p.photo) payload.photos[p.id] = p.photo; });
+    await setDoc(doc(db, 'trees', currentTreeId), payload);
+    localStorage.setItem('arvore_tree_id', currentTreeId);
+    setStatus('salvo ✓');
+    showSaveModal(currentTreeId);
+  } catch(e) {
+    setStatus('erro ao salvar');
+    showToast('Erro ao salvar: ' + e.message);
+  }
+};
+
+async function loadFromCloud(treeId) {
+  setStatus('carregando...');
+  try {
+    const snap = await getDoc(doc(db, 'trees', treeId));
+    if (!snap.exists()) { showToast('Código não encontrado.'); setStatus(''); return; }
+    const data = snap.data();
+    people = data.people.map(p => ({...p, photo: data.photos && data.photos[p.id] ? data.photos[p.id] : null}));
+    nextId = data.nextId;
+    currentTreeId = treeId;
+    localStorage.setItem('arvore_tree_id', treeId);
+    selectedId = null;
+    renderTree(); renderSidebar();
+    setStatus('salvo ✓');
+    showToast('Árvore carregada!');
+  } catch(e) {
+    setStatus('erro');
+    showToast('Erro ao carregar: ' + e.message);
+  }
+}
+
+// ── MODALS ──
+function showSaveModal(treeId) {
+  const ov = document.createElement('div'); ov.className = 'overlay';
+  ov.innerHTML = `<div class="modal">
+    <h2>🌳 Árvore salva!</h2>
+    <p>Use este código para abrir sua árvore em qualquer dispositivo:</p>
+    <div class="tree-id-display">${treeId}</div>
+    <p style="font-size:0.75rem;color:var(--muted);">Anote ou tire uma foto deste código.</p>
+    <button class="btn-gold" id="copy-btn">📋 Copiar código</button>
+    <button class="btn-muted" onclick="this.closest('.overlay').remove()">Fechar</button>
+  </div>`;
+  ov.querySelector('#copy-btn').onclick = () => {
+    navigator.clipboard && navigator.clipboard.writeText(treeId);
+    ov.querySelector('#copy-btn').textContent = '✓ Copiado!';
+    setTimeout(() => { if(ov.querySelector('#copy-btn')) ov.querySelector('#copy-btn').textContent = '📋 Copiar código'; }, 2000);
+  };
+  ov.onclick = e => { if (e.target === ov) ov.remove(); };
+  document.body.appendChild(ov);
+}
+
+window.showOpenModal = function() {
+  const ov = document.createElement('div'); ov.className = 'overlay';
+  ov.innerHTML = `<div class="modal">
+    <h2>📂 Abrir árvore</h2>
+    <p>Digite o código de 6 letras da sua árvore:</p>
+    <input id="tree-code-inp" placeholder="Ex: AB3X7K" maxlength="6" style="text-transform:uppercase;font-size:1.2rem;letter-spacing:0.2em;">
+    <button class="btn-gold" id="load-btn">Carregar</button>
+    <button class="btn-muted" onclick="this.closest('.overlay').remove()">Cancelar</button>
+  </div>`;
+  const inp = ov.querySelector('#tree-code-inp');
+  ov.querySelector('#load-btn').onclick = () => {
+    const v = inp.value.trim().toUpperCase();
+    if (v.length === 6) { ov.remove(); loadFromCloud(v); }
+    else showToast('Digite os 6 caracteres do código.');
+  };
+  inp.onkeydown = e => { if (e.key === 'Enter') ov.querySelector('#load-btn').click(); };
+  ov.onclick = e => { if (e.target === ov) ov.remove(); };
+  document.body.appendChild(ov);
+  setTimeout(() => inp.focus(), 100);
+};
+
+// ── SEED ──
+function seed() {
+  const a1 = addPerson({ name:'João Silva', birth:'1930', color:PALETTE[0], gender:'m' });
+  const a2 = addPerson({ name:'Maria Silva', birth:'1933', color:PALETTE[4], gender:'f', spouseId:a1 });
+  get(a1).spouseId = a2;
+  const b1 = addPerson({ name:'Carlos Santos', birth:'1928', color:PALETTE[2], gender:'m' });
+  const b2 = addPerson({ name:'Ana Santos', birth:'1932', color:PALETTE[4], gender:'f', spouseId:b1 });
+  get(b1).spouseId = b2;
+  const pai = addPerson({ name:'Pedro Silva', birth:'1960', color:PALETTE[0], gender:'m', parentId:a1 });
+  const mae = addPerson({ name:'Lúcia Santos', birth:'1963', color:PALETTE[4], gender:'f', parentId:b1, spouseId:pai });
+  get(pai).spouseId = mae;
+  addPerson({ name:'Você', birth:'1988', color:PALETTE[1], gender:'m', parentId:pai });
+  addPerson({ name:'Irmã Clara', birth:'1991', color:PALETTE[4], gender:'f', parentId:pai });
+}
+
+function addPerson(data) {
+  const id = uid();
+  people.push({ id, name:'Nova Pessoa', birth:'', death:'', gender:'o', color:PALETTE[0], parentId:null, spouseId:null, photo:null, nationality:'', ...data });
+  return id;
+}
+
+// ── TREE LAYOUT ──
+function buildGenerations() {
+  const gen = {}, visited = new Set();
+  function assign(id, depth) {
+    if (visited.has(id)) return;
+    visited.add(id);
+    if (!gen[depth]) gen[depth] = [];
+    gen[depth].push(id);
+    people.filter(p => p.parentId === id).forEach(c => assign(c.id, depth + 1));
+    const p = get(id);
+    if (p && p.spouseId && !visited.has(p.spouseId)) assign(p.spouseId, depth);
+  }
+  people.filter(p => !p.parentId).forEach(r => assign(r.id, 0));
+  people.forEach(p => { if (!visited.has(p.id)) assign(p.id, 0); });
+  return gen;
+}
+
+function orderBySpouse(ids) {
+  const result = [], used = new Set();
+  ids.forEach(id => {
+    if (used.has(id)) return;
+    result.push(id); used.add(id);
+    const p = get(id);
+    if (p && p.spouseId && ids.includes(p.spouseId) && !used.has(p.spouseId)) { result.push(p.spouseId); used.add(p.spouseId); }
+  });
+  return result;
+}
+
+let cardPositions = {};
+
+function renderTree() {
+  const root = document.getElementById('tree-root');
+  root.innerHTML = ''; cardPositions = {};
+  const gens = buildGenerations();
+  Object.keys(gens).map(Number).sort((a,b)=>a-b).forEach((d, di) => {
+    if (di > 0) { const sp = document.createElement('div'); sp.className = 'gen-spacer'; root.appendChild(sp); }
+    const row = document.createElement('div'); row.className = 'gen-row';
+    orderBySpouse(gens[d]).forEach(id => { const p = get(id); if (p) row.appendChild(makeCard(p, d)); });
+    root.appendChild(row);
+  });
+  requestAnimationFrame(drawLines);
+}
+
+function makeCard(p, depth) {
+  const card = document.createElement('div');
+  card.className = 'person-card' + (p.id === selectedId ? ' selected' : '');
+  card.dataset.id = p.id;
+  card.onclick = () => selectPerson(p.id);
+  const av = document.createElement('div'); av.className = 'avatar';
+  if (p.photo) { const img = document.createElement('img'); img.src = p.photo; av.appendChild(img); }
+  else { av.style.background = p.color; av.textContent = initials(p.name); }
+  const name = document.createElement('div'); name.className = 'person-name'; name.textContent = p.name;
+  const years = document.createElement('div'); years.className = 'person-years';
+  years.textContent = [p.birth, p.death ? '†'+p.death : ''].filter(Boolean).join(' – ') || '—';
+  const badge = document.createElement('div'); badge.className = 'gen-badge';
+  badge.style.background = PALETTE[depth % PALETTE.length]; badge.textContent = depth + 1;
+  if (p.nationality) {
+    const flag = document.createElement('div'); flag.className = 'flag-badge';
+    flag.textContent = flagFor(p.nationality);
+    flag.title = countryNameFor(p.nationality);
+    card.appendChild(flag);
+  }
+  card.append(av, name, years, badge);
+  return card;
+}
+
+function drawLines() {
+  const svg = document.getElementById('svg-canvas');
+  const wrap = document.getElementById('canvas-wrap');
+  svg.setAttribute('width', wrap.scrollWidth); svg.setAttribute('height', wrap.scrollHeight);
+  svg.innerHTML = `<defs><marker id="dot" markerWidth="4" markerHeight="4" refX="2" refY="2"><circle cx="2" cy="2" r="1.5" fill="#4a3f30"/></marker></defs>`;
+  document.querySelectorAll('.person-card').forEach(el => {
+    const id = +el.dataset.id, r = el.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
+    cardPositions[id] = { x: r.left-wr.left+wrap.scrollLeft, y: r.top-wr.top+wrap.scrollTop, w: r.width, h: r.height };
+  });
+  people.forEach(p => {
+    if (!p.parentId) return;
+    const parent = get(p.parentId); if (!parent) return;
+    const pp = cardPositions[p.parentId], cp = cardPositions[p.id]; if (!pp||!cp) return;
+    let px = pp.x+pp.w/2;
+    if (parent.spouseId) { const sp = cardPositions[parent.spouseId]; if(sp) px=(px+sp.x+sp.w/2)/2; }
+    const cx=cp.x+cp.w/2, cy=cp.y, my=(pp.y+pp.h+cy)/2;
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',`M${px},${pp.y+pp.h} C${px},${my} ${cx},${my} ${cx},${cy}`);
+    path.setAttribute('fill','none'); path.setAttribute('stroke','#4a3f30');
+    path.setAttribute('stroke-width','1.5'); path.setAttribute('marker-end','url(#dot)');
+    svg.appendChild(path);
+  });
+  const drawn = new Set();
+  people.forEach(p => {
+    if (!p.spouseId) return;
+    const key = [p.id,p.spouseId].sort().join('-');
+    if (drawn.has(key)) return; drawn.add(key);
+    const a=cardPositions[p.id], b=cardPositions[p.spouseId]; if(!a||!b) return;
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',a.x+a.w); line.setAttribute('y1',a.y+a.h/2);
+    line.setAttribute('x2',b.x); line.setAttribute('y2',b.y+b.h/2);
+    line.setAttribute('stroke','#c9a84c'); line.setAttribute('stroke-width','1'); line.setAttribute('stroke-dasharray','4 3');
+    svg.appendChild(line);
+  });
+}
+
+// ── SIDEBAR ──
+function selectPerson(id) {
+  selectedId = id;
+  document.querySelectorAll('.person-card').forEach(el => el.classList.toggle('selected', +el.dataset.id === id));
+  renderSidebar();
+}
+
+function renderSidebar() {
+  const p = get(selectedId);
+  document.getElementById('empty-state').style.display = p ? 'none' : 'flex';
+  const ep = document.getElementById('edit-panel');
+  if (!p) { ep.style.display = 'none'; return; }
+  ep.style.display = 'flex'; ep.innerHTML = '';
+
+  // Photo
+  const photoField = document.createElement('div'); photoField.className = 'field';
+  photoField.innerHTML = '<label>Foto</label>';
+  const photoArea = document.createElement('div'); photoArea.className = 'photo-upload-area';
+  if (p.photo) {
+    const img = document.createElement('img'); img.src = p.photo; img.className = 'photo-preview';
+    const rm = document.createElement('div'); rm.className = 'photo-remove'; rm.textContent = '✕';
+    rm.onclick = e => { e.stopPropagation(); p.photo = null; refreshCard(p.id); renderSidebar(); setStatus('não salvo'); };
+    photoArea.append(img, rm);
+  } else {
+    const ph = document.createElement('div'); ph.className = 'photo-placeholder';
+    ph.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Adicionar foto</span>`;
+    photoArea.appendChild(ph);
+  }
+  photoArea.onclick = () => pickPhoto(p.id);
+  photoField.appendChild(photoArea); ep.appendChild(photoField);
+
+  function makeInput(labelText, fieldName, placeholder) {
+    const div = document.createElement('div'); div.className = 'field';
+    const lbl = document.createElement('label'); lbl.textContent = labelText;
+    const inp = document.createElement('input');
+    inp.value = p[fieldName] || ''; inp.placeholder = placeholder || '';
+    inp.addEventListener('input', e => {
+      p[fieldName] = e.target.value;
+      if (fieldName === 'name' || fieldName === 'birth' || fieldName === 'death') refreshCard(p.id);
+      setStatus('não salvo');
+    });
+    div.append(lbl, inp); return div;
+  }
+
+  ep.appendChild(makeInput('Nome', 'name', 'Nome completo'));
+  ep.appendChild(makeInput('Nascimento', 'birth', '1950'));
+  ep.appendChild(makeInput('Falecimento (opcional)', 'death', '2010'));
+
+  const genDiv = document.createElement('div'); genDiv.className = 'field';
+  genDiv.innerHTML = '<label>Gênero</label>';
+  const sel = document.createElement('select');
+  [['m','♂ Masculino'],['f','♀ Feminino'],['o','◈ Outro']].forEach(([v,t]) => {
+    const o = document.createElement('option'); o.value=v; o.textContent=t; if(p.gender===v) o.selected=true; sel.appendChild(o);
+  });
+  sel.onchange = e => { p.gender = e.target.value; setStatus('não salvo'); };
+  genDiv.appendChild(sel); ep.appendChild(genDiv);
+
+  const natDiv = document.createElement('div'); natDiv.className = 'field';
+  natDiv.innerHTML = '<label>Nacionalidade</label>';
+  const natSel = document.createElement('select');
+  const natOpt0 = document.createElement('option'); natOpt0.value = ''; natOpt0.textContent = '— não definida —'; natSel.appendChild(natOpt0);
+  COUNTRIES.forEach(([code, label]) => {
+    const o = document.createElement('option'); o.value = code; o.textContent = label;
+    if (p.nationality === code) o.selected = true;
+    natSel.appendChild(o);
+  });
+  natSel.onchange = e => { p.nationality = e.target.value; refreshCard(p.id); setStatus('não salvo'); };
+  natDiv.appendChild(natSel); ep.appendChild(natDiv);
+
+  const colorDiv = document.createElement('div'); colorDiv.className = 'field';
+  colorDiv.innerHTML = '<label>Cor do avatar</label>';
+  const colorRow = document.createElement('div'); colorRow.className = 'color-row';
+  PALETTE.forEach(c => {
+    const dot = document.createElement('div');
+    dot.className = 'color-dot' + (p.color===c?' active':''); dot.style.background = c;
+    dot.onclick = () => { p.color=c; colorRow.querySelectorAll('.color-dot').forEach(d=>d.classList.toggle('active',d.style.background===c)); if(!p.photo) refreshCard(p.id); setStatus('não salvo'); };
+    colorRow.appendChild(dot);
+  });
+  colorDiv.appendChild(colorRow); ep.appendChild(colorDiv);
+  ep.appendChild(Object.assign(document.createElement('hr'),{className:'divider'}));
+
+  const spouseDiv = document.createElement('div'); spouseDiv.className = 'field';
+  spouseDiv.innerHTML = '<label>Cônjuge</label>';
+  const spSel = document.createElement('select');
+  const spOpt = document.createElement('option'); spOpt.value=''; spOpt.textContent='— sem cônjuge —'; spSel.appendChild(spOpt);
+  people.filter(x=>x.id!==p.id&&x.parentId!==p.id&&p.parentId!==x.id).forEach(x=>{
+    const o=document.createElement('option'); o.value=x.id; o.textContent=x.name; if(p.spouseId===x.id) o.selected=true; spSel.appendChild(o);
+  });
+  spSel.onchange = e => { setSpouse(p.id, e.target.value); setStatus('não salvo'); };
+  spouseDiv.appendChild(spSel); ep.appendChild(spouseDiv);
+
+  const parentDiv = document.createElement('div'); parentDiv.className = 'field';
+  parentDiv.innerHTML = '<label>Pai / Mãe</label>';
+  const prSel = document.createElement('select');
+  const prOpt = document.createElement('option'); prOpt.value=''; prOpt.textContent='— raiz da árvore —'; prSel.appendChild(prOpt);
+  people.filter(x=>x.id!==p.id&&x.id!==p.spouseId).forEach(x=>{
+    const o=document.createElement('option'); o.value=x.id; o.textContent=x.name; if(p.parentId===x.id) o.selected=true; prSel.appendChild(o);
+  });
+  prSel.onchange = e => { setParent(p.id, e.target.value); setStatus('não salvo'); };
+  parentDiv.appendChild(prSel); ep.appendChild(parentDiv);
+  ep.appendChild(Object.assign(document.createElement('hr'),{className:'divider'}));
+
+  const btnRow = document.createElement('div'); btnRow.className = 'btn-row';
+  const btnDel = document.createElement('button'); btnDel.className='btn-danger'; btnDel.style.flex='1'; btnDel.textContent='Remover';
+  btnDel.onclick = () => deletePerson(p.id);
+  btnRow.appendChild(btnDel); ep.appendChild(btnRow);
+
+  const children = people.filter(c=>c.parentId===p.id);
+  const spouse = p.spouseId?get(p.spouseId):null;
+  const parent = p.parentId?get(p.parentId):null;
+  const siblings = parent?people.filter(c=>c.parentId===parent.id&&c.id!==p.id):[];
+  const rels = [];
+  if(spouse) rels.push([spouse,'Cônjuge']);
+  if(parent) rels.push([parent,'Pai/Mãe']);
+  siblings.forEach(s=>rels.push([s,'Irmão/Irmã']));
+  children.forEach(c=>rels.push([c,'Filho/Filha']));
+  if(rels.length) {
+    const sec=document.createElement('div'); sec.className='relations-section';
+    const h3=document.createElement('h3'); h3.textContent='Relações'; sec.appendChild(h3);
+    rels.forEach(([rp,role])=>{
+      const item=document.createElement('div'); item.className='rel-item';
+      item.onclick=()=>{selectedId=rp.id;renderTree();renderSidebar();};
+      const rav=document.createElement('div'); rav.className='rel-avatar';
+      if(rp.photo){const ri=document.createElement('img');ri.src=rp.photo;rav.appendChild(ri);}
+      else{rav.style.background=rp.color;rav.textContent=initials(rp.name);}
+      const rname=document.createElement('div'); rname.className='rel-name'; rname.textContent=rp.name;
+      const rrole=document.createElement('div'); rrole.className='rel-role'; rrole.textContent=role;
+      item.append(rav,rname,rrole); sec.appendChild(item);
+    });
+    ep.appendChild(sec);
+  }
+  const btnChild=document.createElement('button'); btnChild.className='btn-add-child'; btnChild.textContent='＋ Adicionar filho(a)';
+  btnChild.onclick=()=>addChild(p.id); ep.appendChild(btnChild);
+}
+
+function refreshCard(id) {
+  const p=get(id); if(!p) return;
+  const card=document.querySelector(`.person-card[data-id="${id}"]`); if(!card) return;
+  const av=card.querySelector('.avatar');
+  if(p.photo){av.style.background='';av.innerHTML=`<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;}
+  else{av.style.background=p.color;av.innerHTML=initials(p.name);}
+  card.querySelector('.person-name').textContent=p.name;
+  card.querySelector('.person-years').textContent=[p.birth,p.death?'†'+p.death:''].filter(Boolean).join(' – ')||'—';
+  let flagEl = card.querySelector('.flag-badge');
+  if (p.nationality) {
+    if (!flagEl) { flagEl = document.createElement('div'); flagEl.className = 'flag-badge'; card.appendChild(flagEl); }
+    flagEl.textContent = flagFor(p.nationality);
+    flagEl.title = countryNameFor(p.nationality);
+  } else if (flagEl) {
+    flagEl.remove();
+  }
+}
+
+function pickPhoto(id) {
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+  inp.onchange=e=>{
+    const f=e.target.files[0]; if(!f) return;
+    // Resize to max 200px to keep Firestore happy
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{
+        const max=200, canvas=document.createElement('canvas');
+        let w=img.width, h=img.height;
+        if(w>h){if(w>max){h=h*max/w;w=max;}}else{if(h>max){w=w*max/h;h=max;}}
+        canvas.width=w; canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        get(id).photo=canvas.toDataURL('image/jpeg',0.7);
+        refreshCard(id); renderSidebar(); setStatus('não salvo');
+      };
+      img.src=ev.target.result;
+    };
+    reader.readAsDataURL(f);
+  };
+  inp.click();
+}
+
+function setSpouse(id,val) {
+  const p=get(id);
+  if(p.spouseId){const o=get(p.spouseId);if(o)o.spouseId=null;}
+  p.spouseId=val?+val:null;
+  if(val){const sp=get(+val);if(sp)sp.spouseId=id;}
+  renderTree(); renderSidebar();
+}
+
+function setParent(id,val) { get(id).parentId=val?+val:null; renderTree(); renderSidebar(); }
+
+window.addRootPerson = function() {
+  const id=addPerson({name:'Nova Pessoa',color:PALETTE[Math.floor(Math.random()*PALETTE.length)]});
+  selectedId=id; renderTree(); renderSidebar(); setStatus('não salvo');
+  showToast('Pessoa adicionada!');
+};
+
+function addChild(parentId) {
+  const id=addPerson({name:'Novo filho(a)',color:PALETTE[1],gender:'o',parentId});
+  selectedId=id; renderTree(); renderSidebar(); setStatus('não salvo');
+  showToast('Filho(a) adicionado!');
+}
+
+function deletePerson(id) {
+  people.forEach(p=>{if(p.spouseId===id)p.spouseId=null;if(p.parentId===id)p.parentId=null;});
+  people=people.filter(p=>p.id!==id); selectedId=null; renderTree(); renderSidebar(); setStatus('não salvo');
+}
+
+window.exportData = function() {
+  const blob=new Blob([JSON.stringify({people,nextId},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='arvore.json'; a.click();
+  showToast('Exportado!');
+};
+
+window.importData = function() {
+  const input=document.createElement('input'); input.type='file'; input.accept='.json';
+  input.onchange=e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try{const d=JSON.parse(ev.target.result);people=d.people;nextId=d.nextId;selectedId=null;renderTree();renderSidebar();setStatus('não salvo');showToast('Importado!');}
+      catch{showToast('Erro ao ler arquivo.');}
+    };
+    r.readAsText(f);
+  };
+  input.click();
+};
+
+window.addEventListener('resize', ()=>requestAnimationFrame(drawLines));
+window.renderTree = renderTree;
+window.renderSidebar = renderSidebar;
+
+// ── INIT ──
+if (currentTreeId) {
+  loadFromCloud(currentTreeId);
+} else {
+  seed(); renderTree();
+}
+</script>
+</body>
+</html>
