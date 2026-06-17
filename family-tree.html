@@ -192,29 +192,28 @@ const db = getFirestore(app);
 // ── HELPERS ──
 const PALETTE = ['#6b8fa3','#7a9b6e','#a08060','#8a6fa0','#a07080','#5a8080','#9b7a5a'];
 const COUNTRIES = [
-  ['BR','🇧🇷 Brasil'],['PT','🇵🇹 Portugal'],['US','🇺🇸 Estados Unidos'],['JP','🇯🇵 Japão'],
-  ['IT','🇮🇹 Itália'],['ES','🇪🇸 Espanha'],['DE','🇩🇪 Alemanha'],['FR','🇫🇷 França'],
-  ['GB','🇬🇧 Reino Unido'],['AR','🇦🇷 Argentina'],['CN','🇨🇳 China'],['KR','🇰🇷 Coreia do Sul'],
-  ['CA','🇨🇦 Canadá'],['MX','🇲🇽 México'],['IN','🇮🇳 Índia'],['RU','🇷🇺 Rússia'],
-  ['NL','🇳🇱 Países Baixos'],['CH','🇨🇭 Suíça'],['AT','🇦🇹 Áustria'],['BE','🇧🇪 Bélgica'],
-  ['SE','🇸🇪 Suécia'],['NO','🇳🇴 Noruega'],['DK','🇩🇰 Dinamarca'],['FI','🇫🇮 Finlândia'],
-  ['PL','🇵🇱 Polônia'],['GR','🇬🇷 Grécia'],['IE','🇮🇪 Irlanda'],['AU','🇦🇺 Austrália'],
-  ['NZ','🇳🇿 Nova Zelândia'],['ZA','🇿🇦 África do Sul'],['EG','🇪🇬 Egito'],['NG','🇳🇬 Nigéria'],
-  ['AO','🇦🇴 Angola'],['MZ','🇲🇿 Moçambique'],['CV','🇨🇻 Cabo Verde'],['CO','🇨🇴 Colômbia'],
-  ['CL','🇨🇱 Chile'],['PE','🇵🇪 Peru'],['UY','🇺🇾 Uruguai'],['PY','🇵🇾 Paraguai'],
-  ['VE','🇻🇪 Venezuela'],['BO','🇧🇴 Bolívia'],['EC','🇪🇨 Equador'],['CU','🇨🇺 Cuba'],
-  ['TR','🇹🇷 Turquia'],['IL','🇮🇱 Israel'],['LB','🇱🇧 Líbano'],['SY','🇸🇾 Síria'],
-  ['UA','🇺🇦 Ucrânia'],['CZ','🇨🇿 República Tcheca'],['HU','🇭🇺 Hungria'],['RO','🇷🇴 Romênia'],
-  ['HR','🇭🇷 Croácia'],['RS','🇷🇸 Sérvia'],['VN','🇻🇳 Vietnã'],['TH','🇹🇭 Tailândia'],
-  ['PH','🇵🇭 Filipinas'],['ID','🇮🇩 Indonésia'],['MY','🇲🇾 Malásia'],['SG','🇸🇬 Singapura'],
+  ['BR','Brasil'],['PT','Portugal'],['US','Estados Unidos'],['JP','Japão'],
+  ['IT','Itália'],['ES','Espanha'],['DE','Alemanha'],['FR','França'],
+  ['GB','Reino Unido'],['AR','Argentina'],['CN','China'],['KR','Coreia do Sul'],
+  ['CA','Canadá'],['MX','México'],['IN','Índia'],['RU','Rússia'],
+  ['NL','Países Baixos'],['CH','Suíça'],['AT','Áustria'],['BE','Bélgica'],
+  ['SE','Suécia'],['NO','Noruega'],['DK','Dinamarca'],['FI','Finlândia'],
+  ['PL','Polônia'],['GR','Grécia'],['IE','Irlanda'],['AU','Austrália'],
+  ['NZ','Nova Zelândia'],['ZA','África do Sul'],['EG','Egito'],['NG','Nigéria'],
+  ['AO','Angola'],['MZ','Moçambique'],['CV','Cabo Verde'],['CO','Colômbia'],
+  ['CL','Chile'],['PE','Peru'],['UY','Uruguai'],['PY','Paraguai'],
+  ['VE','Venezuela'],['BO','Bolívia'],['EC','Equador'],['CU','Cuba'],
+  ['TR','Turquia'],['IL','Israel'],['LB','Líbano'],['SY','Síria'],
+  ['UA','Ucrânia'],['CZ','República Tcheca'],['HU','Hungria'],['RO','Romênia'],
+  ['HR','Croácia'],['RS','Sérvia'],['VN','Vietnã'],['TH','Tailândia'],
+  ['PH','Filipinas'],['ID','Indonésia'],['MY','Malásia'],['SG','Singapura'],
 ];
-function flagFor(code) {
-  const c = COUNTRIES.find(x => x[0] === code);
-  return c ? c[1].split(' ')[0] : '';
+function flagUrlFor(code) {
+  return `https://flagcdn.com/24x18/${code.toLowerCase()}.png`;
 }
 function countryNameFor(code) {
   const c = COUNTRIES.find(x => x[0] === code);
-  return c ? c[1].split(' ').slice(1).join(' ') : '';
+  return c ? c[1] : '';
 }
 let people = [], selectedId = null, nextId = 1;
 let currentTreeId = localStorage.getItem('arvore_tree_id') || null;
@@ -396,7 +395,7 @@ function makeCard(p, depth) {
   badge.style.background = PALETTE[depth % PALETTE.length]; badge.textContent = depth + 1;
   if (p.nationality) {
     const flag = document.createElement('div'); flag.className = 'flag-badge';
-    flag.textContent = flagFor(p.nationality);
+    flag.innerHTML = `<img src="${flagUrlFor(p.nationality)}" alt="${p.nationality}" style="width:16px;height:12px;object-fit:cover;border-radius:2px;">`;
     flag.title = countryNameFor(p.nationality);
     card.appendChild(flag);
   }
@@ -603,7 +602,7 @@ function refreshCard(id) {
   let flagEl = card.querySelector('.flag-badge');
   if (p.nationality) {
     if (!flagEl) { flagEl = document.createElement('div'); flagEl.className = 'flag-badge'; card.appendChild(flagEl); }
-    flagEl.textContent = flagFor(p.nationality);
+    flagEl.innerHTML = `<img src="${flagUrlFor(p.nationality)}" alt="${p.nationality}" style="width:16px;height:12px;object-fit:cover;border-radius:2px;">`;
     flagEl.title = countryNameFor(p.nationality);
   } else if (flagEl) {
     flagEl.remove();
