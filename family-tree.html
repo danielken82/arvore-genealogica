@@ -20,10 +20,19 @@
   #canvas-wrap {
     flex: 1; position: relative; overflow: auto;
     background-color: var(--bg);
-    background-image: radial-gradient(ellipse at 20% 30%, rgba(201,168,76,0.04) 0%, transparent 60%);
   }
-  #bg-decor { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; min-height: 100%; }
-  #bg-decor svg { position: absolute; }
+  #bg-decor { position: absolute; top: 0; left: 0; right: 0; height: 100%; min-height: 100%; pointer-events: none; overflow: visible; z-index: 0; }
+  #bg-decor svg { position: absolute; top: 0; }
+  .flag-watermark {
+    position: sticky;
+    top: 50%;
+    width: 380px;
+    height: 0;
+    display: block;
+    z-index: 0;
+    opacity: 0.4;
+  }
+  .flag-watermark svg { position: static; display: block; transform: translateY(-50%); border-radius: 6px; }
   #svg-canvas { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1; }
   #tree-root { position: relative; min-width: 100%; min-height: 100%; padding: 40px; z-index: 2; }
   .gen-row { display: flex; justify-content: center; gap: 20px; position: relative; }
@@ -152,50 +161,93 @@
 <div class="layout">
   <div id="canvas-wrap">
     <div id="bg-decor">
-      <!-- Left side: Okinawa / Japan motifs — seigaiha waves, sun, hibiscus -->
-      <svg width="420" height="900" viewBox="0 0 420 900" style="left:0; top:0; opacity:0.07;">
-        <circle cx="60" cy="90" r="46" fill="none" stroke="#c9a84c" stroke-width="1.5"/>
-        <g stroke="#c9a84c" stroke-width="1.2" fill="none">
-          <path d="M-20,260 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0"/>
-          <path d="M-20,300 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0"/>
-          <path d="M-20,340 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0"/>
-        </g>
-        <g transform="translate(90,540)" stroke="#c9a84c" stroke-width="1.3" fill="none">
-          <path d="M0,40 C-30,10 -30,-30 0,-40 C30,-30 30,10 0,40 Z"/>
-          <path d="M0,40 C-30,10 -30,-30 0,-40 C30,-30 30,10 0,40 Z" transform="rotate(72)"/>
-          <path d="M0,40 C-30,10 -30,-30 0,-40 C30,-30 30,10 0,40 Z" transform="rotate(144)"/>
-          <path d="M0,40 C-30,10 -30,-30 0,-40 C30,-30 30,10 0,40 Z" transform="rotate(216)"/>
-          <path d="M0,40 C-30,10 -30,-30 0,-40 C30,-30 30,10 0,40 Z" transform="rotate(288)"/>
-          <circle r="9"/>
-        </g>
-        <g stroke="#c9a84c" stroke-width="1.2" fill="none" transform="translate(0,760)">
-          <path d="M-20,0 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0"/>
-          <path d="M-20,40 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0 a40,40 0 0 1 80,0"/>
-        </g>
+      <!-- Real flags as large centered watermarks, one per side -->
+      <div class="flag-watermark" style="left: 6%;">
+        <svg viewBox="0 0 900 600" width="380" height="253">
+          <rect width="900" height="600" fill="#bc3a3a"/>
+          <rect width="900" height="200" fill="#ffffff"/>
+          <rect y="400" width="900" height="200" fill="#ffffff"/>
+          <circle cx="450" cy="300" r="180" fill="#bc3a3a"/>
+        </svg>
+      </div>
+      <div class="flag-watermark" style="right: 6%;">
+        <svg viewBox="0 0 900 630" width="380" height="266">
+          <rect width="900" height="630" fill="#4f9b4f"/>
+          <polygon points="450,60 850,315 450,570 50,315" fill="#e8c44a"/>
+          <circle cx="450" cy="315" r="140" fill="#2b4d8f"/>
+          <path d="M310,315 a140,140 0 0 1 280,0" fill="none" stroke="#ffffff" stroke-width="10"/>
+        </svg>
+      </div>
+      <!-- Left side: Okinawa / Japan motifs — repeating seigaiha waves, hibiscus, shisa-inspired sun -->
+      <svg width="380" height="100%" style="left:0; top:0; opacity:0.16;" preserveAspectRatio="none">
+        <defs>
+          <pattern id="seigaiha" width="68" height="34" patternUnits="userSpaceOnUse">
+            <path d="M0,34 A34,34 0 0 1 34,0 A34,34 0 0 1 68,34" fill="none" stroke="#c4675f" stroke-width="1.6"/>
+            <path d="M0,34 A24,24 0 0 1 24,10 A24,24 0 0 1 48,34" fill="none" stroke="#c4675f" stroke-width="1.2" opacity="0.7"/>
+            <path d="M20,34 A14,14 0 0 1 34,20 A14,14 0 0 1 48,34" fill="none" stroke="#c4675f" stroke-width="0.9" opacity="0.5"/>
+          </pattern>
+        </defs>
+        <rect x="0" y="0" width="380" height="100%" fill="url(#seigaiha)"/>
+        <rect x="0" y="0" width="380" height="100%" fill="#1a1612" opacity="0.55"/>
       </svg>
-      <!-- Right side: Brazil motifs — sun rays, tropical leaves, generic coastline (no Rio landmarks) -->
-      <svg width="420" height="900" viewBox="0 0 420 900" style="right:0; top:0; opacity:0.07;">
-        <g transform="translate(330,120)" stroke="#7a9b6e" stroke-width="1.4" fill="none">
-          <circle r="38"/>
-          <g stroke-linecap="round">
-            <line x1="0" y1="-60" x2="0" y2="-48"/>
-            <line x1="0" y1="60" x2="0" y2="48"/>
-            <line x1="-60" y1="0" x2="-48" y2="0"/>
-            <line x1="60" y1="0" x2="48" y2="0"/>
-            <line x1="-42" y1="-42" x2="-34" y2="-34"/>
-            <line x1="42" y1="-42" x2="34" y2="-34"/>
-            <line x1="-42" y1="42" x2="-34" y2="34"/>
-            <line x1="42" y1="42" x2="34" y2="34"/>
-          </g>
-        </g>
-        <g transform="translate(340,400)" stroke="#7a9b6e" stroke-width="1.3" fill="none">
-          <path d="M0,0 C60,-20 90,-70 70,-130 C40,-90 10,-60 0,0 Z"/>
-          <path d="M0,0 C0,30 40,40 70,80" />
-        </g>
-        <g transform="translate(300,560) scale(1.1)" stroke="#7a9b6e" stroke-width="1.3" fill="none">
-          <path d="M0,0 C-50,-15 -75,-60 -55,-110 C-25,-75 -5,-50 0,0 Z"/>
-        </g>
-        <path d="M380,650 C340,700 360,760 320,820 C300,850 330,900 300,900 L420,900 L420,650 Z" stroke="#7a9b6e" stroke-width="1.2" fill="none"/>
+      <svg width="380" height="100%" style="left:0; top:0; opacity:0.13;" preserveAspectRatio="none">
+        <defs>
+          <pattern id="hibiscusPattern" width="200" height="300" patternUnits="userSpaceOnUse">
+            <g transform="translate(60,80)" stroke="#b8567a" stroke-width="1.4" fill="none">
+              <path d="M0,38 C-28,10 -28,-28 0,-38 C28,-28 28,10 0,38 Z"/>
+              <path d="M0,38 C-28,10 -28,-28 0,-38 C28,-28 28,10 0,38 Z" transform="rotate(72)"/>
+              <path d="M0,38 C-28,10 -28,-28 0,-38 C28,-28 28,10 0,38 Z" transform="rotate(144)"/>
+              <path d="M0,38 C-28,10 -28,-28 0,-38 C28,-28 28,10 0,38 Z" transform="rotate(216)"/>
+              <path d="M0,38 C-28,10 -28,-28 0,-38 C28,-28 28,10 0,38 Z" transform="rotate(288)"/>
+              <circle r="8" fill="#c9a84c" stroke="none"/>
+            </g>
+            <g transform="translate(150,220)" stroke="#d96b5f" stroke-width="1.6" fill="none">
+              <circle r="22" fill="#e8e2d4" fill-opacity="0.08"/>
+              <g stroke-linecap="round">
+                <line x1="0" y1="-34" x2="0" y2="-26"/>
+                <line x1="0" y1="34" x2="0" y2="26"/>
+                <line x1="-34" y1="0" x2="-26" y2="0"/>
+                <line x1="34" y1="0" x2="26" y2="0"/>
+                <line x1="-24" y1="-24" x2="-18" y2="-18"/>
+                <line x1="24" y1="-24" x2="18" y2="-18"/>
+                <line x1="-24" y1="24" x2="-18" y2="18"/>
+                <line x1="24" y1="24" x2="18" y2="18"/>
+              </g>
+            </g>
+          </pattern>
+        </defs>
+        <rect x="0" y="0" width="380" height="100%" fill="url(#hibiscusPattern)"/>
+      </svg>
+      <!-- Right side: Brazil motifs — repeating sun rays, monstera/banana leaves, generic coast -->
+      <svg width="380" height="100%" style="right:0; top:0; opacity:0.16;" preserveAspectRatio="none">
+        <defs>
+          <pattern id="brazilPattern" width="180" height="320" patternUnits="userSpaceOnUse">
+            <g transform="translate(40,60)" fill="none" stroke="#7a9b6e" stroke-width="1.8">
+              <circle r="30" fill="#e8c44a" fill-opacity="0.06"/>
+              <g stroke-linecap="round" stroke="#d4b54a">
+                <line x1="0" y1="-48" x2="0" y2="-36"/>
+                <line x1="0" y1="48" x2="0" y2="36"/>
+                <line x1="-48" y1="0" x2="-36" y2="0"/>
+                <line x1="48" y1="0" x2="36" y2="0"/>
+                <line x1="-34" y1="-34" x2="-26" y2="-26"/>
+                <line x1="34" y1="-34" x2="26" y2="-26"/>
+                <line x1="-34" y1="34" x2="-26" y2="26"/>
+                <line x1="34" y1="34" x2="26" y2="26"/>
+              </g>
+            </g>
+            <g transform="translate(130,170)" fill="#7a9b6e" opacity="0.9">
+              <path d="M0,0 C45,-15 70,-55 55,-100 C28,-68 6,-42 0,0 Z"/>
+            </g>
+            <g transform="translate(40,230) scale(1.1)" fill="#7a9b6e" opacity="0.85">
+              <path d="M0,0 C-40,-12 -60,-48 -44,-88 C-20,-60 -4,-38 0,0 Z"/>
+            </g>
+            <g transform="translate(150,40) scale(0.8)" fill="#c9a84c" opacity="0.7">
+              <path d="M0,0 C30,-10 46,-38 36,-68 C16,-46 4,-30 0,0 Z"/>
+            </g>
+          </pattern>
+        </defs>
+        <rect x="0" y="0" width="380" height="100%" fill="url(#brazilPattern)"/>
+        <rect x="0" y="0" width="380" height="100%" fill="#1a1612" opacity="0.5"/>
       </svg>
     </div>
     <svg id="svg-canvas"></svg>
@@ -430,7 +482,17 @@ function renderTree() {
     orderBySpouse(gens[d]).forEach(id => { const p = get(id); if (p) row.appendChild(makeCard(p, d)); });
     root.appendChild(row);
   });
-  requestAnimationFrame(drawLines);
+  requestAnimationFrame(() => { drawLines(); resizeBgDecor(); });
+}
+
+function resizeBgDecor() {
+  const root = document.getElementById('tree-root');
+  const decor = document.getElementById('bg-decor');
+  const wrap = document.getElementById('canvas-wrap');
+  if (!root || !decor) return;
+  const h = Math.max(root.scrollHeight, wrap.clientHeight);
+  decor.style.height = h + 'px';
+  decor.querySelectorAll('svg').forEach(svg => svg.setAttribute('height', h));
 }
 
 function makeCard(p, depth) {
@@ -461,15 +523,54 @@ function drawLines() {
   const wrap = document.getElementById('canvas-wrap');
   svg.setAttribute('width', wrap.scrollWidth); svg.setAttribute('height', wrap.scrollHeight);
   svg.innerHTML = `<defs>
-    <linearGradient id="branchGrad" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="branchGrad" x1="0" y1="0" x2="1" y2="0.3">
+      <stop offset="0%" stop-color="#6b5238"/>
+      <stop offset="45%" stop-color="#4a3a26"/>
+      <stop offset="100%" stop-color="#2e2418"/>
+    </linearGradient>
+    <linearGradient id="trunkGrad" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#5c4830"/>
+      <stop offset="50%" stop-color="#4a3a26"/>
       <stop offset="100%" stop-color="#3a2e1f"/>
     </linearGradient>
+    <radialGradient id="leafGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#8fae6f"/>
+      <stop offset="100%" stop-color="#5a7a48"/>
+    </radialGradient>
   </defs>`;
   document.querySelectorAll('.person-card').forEach(el => {
     const id = +el.dataset.id, r = el.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
     cardPositions[id] = { x: r.left-wr.left+wrap.scrollLeft, y: r.top-wr.top+wrap.scrollTop, w: r.width, h: r.height };
   });
+
+  function leaf(x, y, size, angle, opacity) {
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('transform', `translate(${x},${y}) rotate(${angle})`);
+    g.setAttribute('opacity', opacity);
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', `M0,0 C${size*0.6},-${size*0.5} ${size*1.1},-${size*0.2} ${size*1.4},0 C${size*1.1},${size*0.2} ${size*0.6},${size*0.5} 0,0 Z`);
+    path.setAttribute('fill', 'url(#leafGrad)');
+    g.appendChild(path);
+    const vein = document.createElementNS('http://www.w3.org/2000/svg','line');
+    vein.setAttribute('x1', 0); vein.setAttribute('y1', 0);
+    vein.setAttribute('x2', size*1.3); vein.setAttribute('y2', 0);
+    vein.setAttribute('stroke', '#3d5530'); vein.setAttribute('stroke-width', '0.6');
+    g.appendChild(vein);
+    svg.appendChild(g);
+  }
+
+  function barkLines(d1, d2, width) {
+    // subtle inner texture lines following the same curve, offset
+    [0.3, 0.55, 0.78].forEach((t, i) => {
+      const line = document.createElementNS('http://www.w3.org/2000/svg','path');
+      line.setAttribute('d', d1);
+      line.setAttribute('fill', 'none');
+      line.setAttribute('stroke', '#1f1812');
+      line.setAttribute('stroke-width', '0.5');
+      line.setAttribute('opacity', 0.25 - i*0.05);
+      svg.appendChild(line);
+    });
+  }
 
   // Group children by their parent-pair "trunk point" so siblings share one branch from a common fork.
   const branchGroups = {};
@@ -493,44 +594,77 @@ function drawLines() {
     if (!validKids.length) return;
 
     // Fork point: a bit below the parent(s), organic curve down then out
-    const forkY = py + 34;
-    const trunkWidth = Math.min(7, 3 + validKids.length * 0.8);
+    const forkY = py + 38;
+    const trunkWidth = Math.min(11, 5 + validKids.length * 1.1);
+    const wobble = (Math.random() - 0.5) * 8;
 
-    // Trunk segment from parent down to fork
+    // Trunk segment from parent down to fork — thicker, with bark texture
+    const trunkPath = `M${px-trunkWidth/2},${py} C${px-trunkWidth/2+wobble},${py+14} ${px-trunkWidth/2-wobble},${forkY-14} ${px-trunkWidth*0.4},${forkY} L${px+trunkWidth*0.4},${forkY} C${px+trunkWidth/2-wobble},${forkY-14} ${px+trunkWidth/2+wobble},${py+14} ${px+trunkWidth/2},${py} Z`;
     const trunk = document.createElementNS('http://www.w3.org/2000/svg','path');
-    const wobble = (Math.random() - 0.5) * 6;
-    trunk.setAttribute('d', `M${px-trunkWidth/2},${py} C${px-trunkWidth/2+wobble},${py+12} ${px-trunkWidth/2-wobble},${forkY-12} ${px-trunkWidth/2},${forkY} L${px+trunkWidth/2},${forkY} C${px+trunkWidth/2-wobble},${forkY-12} ${px+trunkWidth/2+wobble},${py+12} ${px+trunkWidth/2},${py} Z`);
-    trunk.setAttribute('fill', 'url(#branchGrad)');
-    trunk.setAttribute('opacity', '0.85');
+    trunk.setAttribute('d', trunkPath);
+    trunk.setAttribute('fill', 'url(#trunkGrad)');
+    trunk.setAttribute('opacity', '0.92');
     svg.appendChild(trunk);
+    barkLines(`M${px},${py} C${px+wobble*0.6},${py+14} ${px-wobble*0.6},${forkY-14} ${px},${forkY}`, null, trunkWidth);
 
-    // Branch out to each child as a tapered organic curve
-    children.forEach(c => {
+    // Small knot/burl detail on trunk
+    const knot = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+    knot.setAttribute('cx', px + trunkWidth*0.25); knot.setAttribute('cy', (py+forkY)/2);
+    knot.setAttribute('rx', 2.2); knot.setAttribute('ry', 3.4);
+    knot.setAttribute('fill', '#241c13'); knot.setAttribute('opacity', '0.5');
+    svg.appendChild(knot);
+
+    // Branch out to each child as a tapered organic curve with sub-twigs and leaves
+    children.forEach((c, ci) => {
       const cp = cardPositions[c.id]; if (!cp) return;
       const cx = cp.x + cp.w/2, cy = cp.y;
       const midY = (forkY + cy) / 2;
-      const sway = (cx - px) * 0.18 + (Math.random() - 0.5) * 10;
-      const startW = trunkWidth * 0.55, endW = 2;
+      const seed = (px*7 + cx*3 + ci*13) % 17;
+      const sway = (cx - px) * 0.22 + (seed - 8) * 1.8;
+      const startW = trunkWidth * 0.5, endW = 2.2;
+
+      const c1x = px + sway*0.32, c1y = forkY + (midY-forkY)*0.45;
+      const c2x = cx - sway*0.32, c2y = cy - (cy-midY)*0.45;
+      const centerline = `M${px},${forkY} C${c1x},${c1y} ${c2x},${c2y} ${cx},${cy}`;
 
       const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-      // Build a tapered branch as a filled shape (two curves forming a wedge)
-      const c1x = px + sway*0.3, c1y = forkY + (midY-forkY)*0.5;
-      const c2x = cx - sway*0.3, c2y = cy - (cy-midY)*0.5;
       path.setAttribute('d', `
         M${px-startW/2},${forkY}
-        C${c1x-startW/2},${c1y} ${c2x-endW/2},${c2y} ${cx-endW/2},${cy}
+        C${c1x-startW*0.4},${c1y} ${c2x-endW*0.6},${c2y} ${cx-endW/2},${cy}
         L${cx+endW/2},${cy}
-        C${c2x+endW/2},${c2y} ${c1x+startW/2},${c1y} ${px+startW/2},${forkY}
+        C${c2x+endW*0.6},${c2y} ${c1x+startW*0.4},${c1y} ${px+startW/2},${forkY}
         Z
       `);
       path.setAttribute('fill', 'url(#branchGrad)');
-      path.setAttribute('opacity', '0.8');
+      path.setAttribute('opacity', '0.88');
       svg.appendChild(path);
+      barkLines(centerline, null, startW);
+
+      // A short secondary twig branching off the main limb, ending in leaves
+      const twigT = 0.55 + (seed % 3) * 0.08;
+      const twigBaseX = px + (cx-px)*twigT, twigBaseY = forkY + (cy-forkY)*twigT;
+      const twigDir = (ci % 2 === 0) ? 1 : -1;
+      const twigEndX = twigBaseX + twigDir * (14 + seed);
+      const twigEndY = twigBaseY - (10 + seed*0.6);
+      const twig = document.createElementNS('http://www.w3.org/2000/svg','path');
+      twig.setAttribute('d', `M${twigBaseX},${twigBaseY} Q${twigBaseX + twigDir*8},${twigBaseY - 8} ${twigEndX},${twigEndY}`);
+      twig.setAttribute('fill', 'none');
+      twig.setAttribute('stroke', '#4a3a26');
+      twig.setAttribute('stroke-width', '1.6');
+      twig.setAttribute('stroke-linecap', 'round');
+      twig.setAttribute('opacity', '0.75');
+      svg.appendChild(twig);
+      leaf(twigEndX, twigEndY, 9 + (seed%4), twigDir>0 ? -25 : 200, 0.7);
+      leaf(twigBaseX + twigDir*4, twigBaseY - 4, 6, twigDir>0 ? 10 : 165, 0.55);
+
+      // Leaves clustered near the card connection point too
+      leaf(cx - 6, cy - 6, 8, -150, 0.65);
+      leaf(cx + 7, cy - 4, 7, -20, 0.6);
 
       // tiny leaf-bud dot at the connection to the card
       const bud = document.createElementNS('http://www.w3.org/2000/svg','circle');
-      bud.setAttribute('cx', cx); bud.setAttribute('cy', cy); bud.setAttribute('r', '2.2');
-      bud.setAttribute('fill', '#6b8f5a'); bud.setAttribute('opacity', '0.7');
+      bud.setAttribute('cx', cx); bud.setAttribute('cy', cy); bud.setAttribute('r', '2.4');
+      bud.setAttribute('fill', '#6b8f5a'); bud.setAttribute('opacity', '0.8');
       svg.appendChild(bud);
     });
   });
@@ -795,7 +929,7 @@ window.importData = function() {
   input.click();
 };
 
-window.addEventListener('resize', ()=>requestAnimationFrame(drawLines));
+window.addEventListener('resize', ()=>requestAnimationFrame(()=>{drawLines();resizeBgDecor();}));
 window.renderTree = renderTree;
 window.renderSidebar = renderSidebar;
 
