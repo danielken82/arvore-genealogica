@@ -610,7 +610,14 @@ window.renderTree = renderTree;
 window.renderSidebar = renderSidebar;
 
 // ── INIT ──
-if (currentTreeId) {
+// Priority: URL ?codigo=XXXXXX > saved localStorage code > seed example
+const urlParams = new URLSearchParams(window.location.search);
+const urlCode = urlParams.get('codigo');
+if (urlCode && urlCode.length === 6) {
+  currentTreeId = urlCode.toUpperCase();
+  localStorage.setItem('arvore_tree_id', currentTreeId);
+  loadFromCloud(currentTreeId);
+} else if (currentTreeId) {
   loadFromCloud(currentTreeId);
 } else {
   seed(); renderTree();
