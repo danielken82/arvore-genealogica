@@ -8,13 +8,27 @@
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #1a1612; --surface: #252019; --card: #2e2820; --card-h: #382f24;
-    --border: #4a3f30; --gold: #c9a84c; --gold-dim: #8a6e30;
-    --text: #e8dcc8; --muted: #9e8e75; --danger: #b85c4a;
+    --bg: #ecdfc0; --surface: #f4ead0; --card: #fbf4e2; --card-h: #fff8ea;
+    --border: #c9b48a; --gold: #a8732e; --gold-dim: #8a5e26;
+    --text: #3d2e1f; --muted: #7a6650; --danger: #b03b3b;
+    --ink: #2c2014;
+    --male: #2e5a82; --male-bg: #dde9f2; --male-border: #9bb8d4;
+    --female: #a8395a; --female-bg: #f5dde3; --female-border: #d99cae;
+    --gen3: #4a7a3a; --gen3-bg: #e3edd8; --gen3-border: #a8c98e;
   }
   body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
-  header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface); }
-  header h1 { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 400; color: var(--gold); }
+  header {
+    padding: 22px 32px 18px;
+    border-bottom: 3px double var(--gold-dim);
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(180deg, var(--surface), var(--bg));
+    position: relative;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif; font-size: 1.9rem; font-weight: 700;
+    color: var(--ink); letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  header .subtitle { font-size: 0.75rem; color: var(--gold-dim); letter-spacing: 0.05em; margin-top: 2px; font-style: italic; }
   #save-status { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.06em; }
   .layout { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 57px); }
   #canvas-wrap {
@@ -46,15 +60,30 @@
   #tree-root { position: relative; width: max-content; min-width: 100%; min-height: 100%; padding: 40px; z-index: 2; margin: 0 auto; }
   .gen-row { display: flex; justify-content: center; gap: 20px; position: relative; width: max-content; margin: 0 auto; }
   .gen-spacer { height: 70px; }
-  .person-card { position: relative; width: 148px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 12px 12px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s, transform 0.15s; user-select: none; }
-  .person-card:hover { background: var(--card-h); transform: translateY(-2px); }
-  .person-card.selected { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
-  .avatar { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; color: #fff; flex-shrink: 0; overflow: hidden; }
+  .person-card {
+    position: relative; width: 142px; background: var(--card);
+    border: 2px solid var(--male-border); border-radius: 8px;
+    padding: 10px 10px 9px; text-align: center; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s, box-shadow 0.2s;
+    user-select: none; box-shadow: 0 1px 3px rgba(60,40,20,0.12);
+    display: flex; align-items: center; gap: 9px; text-align: left;
+  }
+  .person-card:hover { background: var(--card-h); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(60,40,20,0.18); }
+  .person-card.selected { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold); }
+  .person-card.gender-f { border-color: var(--female-border); }
+  .person-card.gender-o { border-color: var(--gen3-border); }
+  .avatar {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.95rem; font-weight: 700; color: #fff; overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.6);
+  }
   .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-  .person-name { font-family: 'Playfair Display', serif; font-size: 0.82rem; line-height: 1.3; color: var(--text); margin-bottom: 3px; }
-  .person-years { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.04em; }
-  .gen-badge { position: absolute; top: -8px; right: -8px; width: 18px; height: 18px; border-radius: 50%; font-size: 0.6rem; font-weight: 600; display: flex; align-items: center; justify-content: center; color: #fff; border: 2px solid var(--bg); }
-  .flag-badge { position: absolute; top: -8px; left: -8px; width: 22px; height: 22px; border-radius: 50%; background: var(--surface); border: 2px solid var(--bg); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; }
+  .card-info { flex: 1; min-width: 0; }
+  .person-name { font-family: 'Playfair Display', serif; font-size: 0.84rem; font-weight: 600; line-height: 1.25; color: var(--ink); margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .person-years { font-size: 0.66rem; color: var(--muted); letter-spacing: 0.02em; }
+  .gen-badge { position: absolute; top: -7px; right: -7px; width: 17px; height: 17px; border-radius: 50%; font-size: 0.58rem; font-weight: 700; display: flex; align-items: center; justify-content: center; color: #fff; border: 2px solid var(--bg); }
+  .flag-badge { position: absolute; top: -7px; left: -7px; width: 20px; height: 20px; border-radius: 50%; background: var(--card); border: 2px solid var(--bg); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
   #sidebar { width: 300px; flex-shrink: 0; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
   .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; gap: 12px; color: var(--muted); }
   .empty-state svg { opacity: 0.3; }
@@ -88,7 +117,7 @@
   .rel-avatar img { width: 100%; height: 100%; object-fit: cover; }
   .rel-name { flex: 1; }
   .rel-role { font-size: 0.68rem; color: var(--muted); }
-  #toolbar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 32px; padding: 10px 18px; z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+  #toolbar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 32px; padding: 10px 18px; z-index: 100; box-shadow: 0 8px 24px rgba(60,40,20,0.25); }
   #toolbar button { background: transparent; color: var(--text); font-size: 0.75rem; padding: 6px 12px; border-radius: 20px; }
   #toolbar button:hover { background: var(--card); opacity: 1; }
   #toolbar .sep { width: 1px; height: 20px; background: var(--border); }
@@ -164,7 +193,10 @@
 </head>
 <body>
 <header>
-  <h1>🌳 Árvore Genealógica</h1>
+  <div>
+    <h1>Árvore Genealógica</h1>
+    <div class="subtitle">Raízes que florescem, gerações que continuam</div>
+  </div>
   <span id="save-status">não salvo</span>
 </header>
 <div class="layout">
@@ -503,26 +535,35 @@ function resizeBgDecor() {
   decor.querySelectorAll('svg').forEach(svg => svg.setAttribute('height', h));
 }
 
+function genderColor(g) {
+  if (g === 'f') return 'var(--female)';
+  if (g === 'o') return 'var(--gen3)';
+  return 'var(--male)';
+}
+
 function makeCard(p, depth) {
   const card = document.createElement('div');
-  card.className = 'person-card' + (p.id === selectedId ? ' selected' : '');
+  const genderClass = p.gender === 'f' ? ' gender-f' : (p.gender === 'o' ? ' gender-o' : ' gender-m');
+  card.className = 'person-card' + genderClass + (p.id === selectedId ? ' selected' : '');
   card.dataset.id = p.id;
   card.onclick = () => selectPerson(p.id);
   const av = document.createElement('div'); av.className = 'avatar';
   if (p.photo) { const img = document.createElement('img'); img.src = p.photo; av.appendChild(img); }
-  else { av.style.background = p.color; av.textContent = initials(p.name); }
+  else { av.style.background = genderColor(p.gender); av.textContent = initials(p.name); }
+  const info = document.createElement('div'); info.className = 'card-info';
   const name = document.createElement('div'); name.className = 'person-name'; name.textContent = p.name;
   const years = document.createElement('div'); years.className = 'person-years';
   years.textContent = [p.birth, p.death ? '†'+p.death : ''].filter(Boolean).join(' – ') || '—';
+  info.append(name, years);
   const badge = document.createElement('div'); badge.className = 'gen-badge';
-  badge.style.background = PALETTE[depth % PALETTE.length]; badge.textContent = depth + 1;
+  badge.style.background = genderColor(p.gender); badge.textContent = depth + 1;
   if (p.nationality) {
     const flag = document.createElement('div'); flag.className = 'flag-badge';
     flag.innerHTML = `<img src="${flagUrlFor(p.nationality)}" alt="${p.nationality}" style="width:16px;height:12px;object-fit:cover;border-radius:2px;">`;
     flag.title = countryNameFor(p.nationality);
     card.appendChild(flag);
   }
-  card.append(av, name, years, badge);
+  card.append(av, info, badge);
   return card;
 }
 
@@ -545,6 +586,10 @@ function drawLines() {
       <stop offset="0%" stop-color="#8fae6f"/>
       <stop offset="100%" stop-color="#5a7a48"/>
     </radialGradient>
+    <radialGradient id="sakuraGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#fbdce4"/>
+      <stop offset="100%" stop-color="#e89aab"/>
+    </radialGradient>
   </defs>`;
   document.querySelectorAll('.person-card').forEach(el => {
     const id = +el.dataset.id, r = el.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
@@ -564,6 +609,24 @@ function drawLines() {
     vein.setAttribute('x2', size*1.3); vein.setAttribute('y2', 0);
     vein.setAttribute('stroke', '#3d5530'); vein.setAttribute('stroke-width', '0.6');
     g.appendChild(vein);
+    svg.appendChild(g);
+  }
+
+  function sakura(x, y, size, opacity) {
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('transform', `translate(${x},${y})`);
+    g.setAttribute('opacity', opacity);
+    for (let i = 0; i < 5; i++) {
+      const petal = document.createElementNS('http://www.w3.org/2000/svg','path');
+      const a = i * 72;
+      petal.setAttribute('d', `M0,0 C${size*0.5},-${size*0.3} ${size*0.5},-${size*0.9} 0,-${size} C-${size*0.5},-${size*0.9} -${size*0.5},-${size*0.3} 0,0 Z`);
+      petal.setAttribute('transform', `rotate(${a})`);
+      petal.setAttribute('fill', 'url(#sakuraGrad)');
+      g.appendChild(petal);
+    }
+    const center = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    center.setAttribute('r', size*0.22); center.setAttribute('fill', '#d4a84c');
+    g.appendChild(center);
     svg.appendChild(g);
   }
 
@@ -662,12 +725,14 @@ function drawLines() {
       twig.setAttribute('stroke-linecap', 'round');
       twig.setAttribute('opacity', '0.75');
       svg.appendChild(twig);
-      leaf(twigEndX, twigEndY, 9 + (seed%4), twigDir>0 ? -25 : 200, 0.7);
-      leaf(twigBaseX + twigDir*4, twigBaseY - 4, 6, twigDir>0 ? 10 : 165, 0.55);
+      leaf(twigEndX, twigEndY, 9 + (seed%4), twigDir>0 ? -25 : 200, 0.65);
+      sakura(twigEndX + twigDir*6, twigEndY - 4, 5 + (seed%3), 0.85);
+      sakura(twigBaseX + twigDir*8, twigBaseY - 10, 4, 0.75);
 
-      // Leaves clustered near the card connection point too
-      leaf(cx - 6, cy - 6, 8, -150, 0.65);
-      leaf(cx + 7, cy - 4, 7, -20, 0.6);
+      // Sakura blossoms and leaves clustered near the card connection point too
+      sakura(cx - 8, cy - 9, 5, 0.8);
+      sakura(cx + 9, cy - 6, 4.5, 0.75);
+      leaf(cx - 2, cy - 12, 7, -150, 0.55);
 
       // tiny leaf-bud dot at the connection to the card
       const bud = document.createElementNS('http://www.w3.org/2000/svg','circle');
@@ -766,7 +831,7 @@ function renderSidebar() {
   [['m','♂ Masculino'],['f','♀ Feminino'],['o','◈ Outro']].forEach(([v,t]) => {
     const o = document.createElement('option'); o.value=v; o.textContent=t; if(p.gender===v) o.selected=true; sel.appendChild(o);
   });
-  sel.onchange = e => { p.gender = e.target.value; setStatus('não salvo'); };
+  sel.onchange = e => { p.gender = e.target.value; refreshCard(p.id); setStatus('não salvo'); };
   genDiv.appendChild(sel); ep.appendChild(genDiv);
 
   const natDiv = document.createElement('div'); natDiv.className = 'field';
@@ -781,16 +846,6 @@ function renderSidebar() {
   natSel.onchange = e => { p.nationality = e.target.value; refreshCard(p.id); setStatus('não salvo'); };
   natDiv.appendChild(natSel); ep.appendChild(natDiv);
 
-  const colorDiv = document.createElement('div'); colorDiv.className = 'field';
-  colorDiv.innerHTML = '<label>Cor do avatar</label>';
-  const colorRow = document.createElement('div'); colorRow.className = 'color-row';
-  PALETTE.forEach(c => {
-    const dot = document.createElement('div');
-    dot.className = 'color-dot' + (p.color===c?' active':''); dot.style.background = c;
-    dot.onclick = () => { p.color=c; colorRow.querySelectorAll('.color-dot').forEach(d=>d.classList.toggle('active',d.style.background===c)); if(!p.photo) refreshCard(p.id); setStatus('não salvo'); };
-    colorRow.appendChild(dot);
-  });
-  colorDiv.appendChild(colorRow); ep.appendChild(colorDiv);
   ep.appendChild(Object.assign(document.createElement('hr'),{className:'divider'}));
 
   const spouseDiv = document.createElement('div'); spouseDiv.className = 'field';
@@ -850,9 +905,13 @@ function renderSidebar() {
 function refreshCard(id) {
   const p=get(id); if(!p) return;
   const card=document.querySelector(`.person-card[data-id="${id}"]`); if(!card) return;
+  card.classList.remove('gender-m','gender-f','gender-o');
+  card.classList.add(p.gender === 'f' ? 'gender-f' : (p.gender === 'o' ? 'gender-o' : 'gender-m'));
   const av=card.querySelector('.avatar');
   if(p.photo){av.style.background='';av.innerHTML=`<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;}
-  else{av.style.background=p.color;av.innerHTML=initials(p.name);}
+  else{av.style.background=genderColor(p.gender);av.innerHTML=initials(p.name);}
+  const badgeEl = card.querySelector('.gen-badge');
+  if (badgeEl) badgeEl.style.background = genderColor(p.gender);
   card.querySelector('.person-name').textContent=p.name;
   card.querySelector('.person-years').textContent=[p.birth,p.death?'†'+p.death:''].filter(Boolean).join(' – ')||'—';
   let flagEl = card.querySelector('.flag-badge');
@@ -900,13 +959,13 @@ function setSpouse(id,val) {
 function setParent(id,val) { get(id).parentId=val?+val:null; renderTree(); renderSidebar(); }
 
 window.addRootPerson = function() {
-  const id=addPerson({name:'Nova Pessoa',color:PALETTE[Math.floor(Math.random()*PALETTE.length)]});
+  const id=addPerson({name:'Nova Pessoa'});
   selectedId=id; renderTree(); renderSidebar(); openSidebar(); setStatus('não salvo');
   showToast('Pessoa adicionada!');
 };
 
 function addChild(parentId) {
-  const id=addPerson({name:'Novo filho(a)',color:PALETTE[1],gender:'o',parentId});
+  const id=addPerson({name:'Novo filho(a)',gender:'o',parentId});
   selectedId=id; renderTree(); renderSidebar(); openSidebar(); setStatus('não salvo');
   showToast('Filho(a) adicionado!');
 }
