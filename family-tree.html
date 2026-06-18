@@ -24,18 +24,27 @@
   #bg-decor { position: absolute; top: 0; left: 0; right: 0; height: 100%; min-height: 100%; pointer-events: none; overflow: visible; z-index: 0; }
   #bg-decor svg { position: absolute; top: 0; }
   .flag-watermark {
-    position: sticky;
+    position: fixed;
     top: 50%;
-    width: 380px;
-    height: 0;
-    display: block;
+    transform: translateY(-50%);
+    width: 320px;
     z-index: 0;
     opacity: 0.4;
+    pointer-events: none;
   }
-  .flag-watermark svg { position: static; display: block; transform: translateY(-50%); border-radius: 6px; }
+  .flag-watermark.left { left: 24px; }
+  .flag-watermark.right { right: 320px; }
+  .flag-watermark svg { display: block; border-radius: 6px; width: 100%; height: auto; }
+  @media (max-width: 1100px) {
+    .flag-watermark { width: 200px; opacity: 0.3; }
+    .flag-watermark.right { right: 24px; }
+  }
+  @media (max-width: 768px) {
+    .flag-watermark { display: none; }
+  }
   #svg-canvas { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1; }
-  #tree-root { position: relative; min-width: 100%; min-height: 100%; padding: 40px; z-index: 2; }
-  .gen-row { display: flex; justify-content: center; gap: 20px; position: relative; }
+  #tree-root { position: relative; width: max-content; min-width: 100%; min-height: 100%; padding: 40px; z-index: 2; margin: 0 auto; }
+  .gen-row { display: flex; justify-content: center; gap: 20px; position: relative; width: max-content; margin: 0 auto; }
   .gen-spacer { height: 70px; }
   .person-card { position: relative; width: 148px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 12px 12px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s, transform 0.15s; user-select: none; }
   .person-card:hover { background: var(--card-h); transform: translateY(-2px); }
@@ -160,24 +169,23 @@
 </header>
 <div class="layout">
   <div id="canvas-wrap">
+    <div class="flag-watermark left">
+      <svg viewBox="0 0 900 600">
+        <rect width="900" height="600" fill="#bc3a3a"/>
+        <rect width="900" height="200" fill="#ffffff"/>
+        <rect y="400" width="900" height="200" fill="#ffffff"/>
+        <circle cx="450" cy="300" r="180" fill="#bc3a3a"/>
+      </svg>
+    </div>
+    <div class="flag-watermark right">
+      <svg viewBox="0 0 900 630">
+        <rect width="900" height="630" fill="#4f9b4f"/>
+        <polygon points="450,60 850,315 450,570 50,315" fill="#e8c44a"/>
+        <circle cx="450" cy="315" r="140" fill="#2b4d8f"/>
+        <path d="M310,315 a140,140 0 0 1 280,0" fill="none" stroke="#ffffff" stroke-width="10"/>
+      </svg>
+    </div>
     <div id="bg-decor">
-      <!-- Real flags as large centered watermarks, one per side -->
-      <div class="flag-watermark" style="left: 6%;">
-        <svg viewBox="0 0 900 600" width="380" height="253">
-          <rect width="900" height="600" fill="#bc3a3a"/>
-          <rect width="900" height="200" fill="#ffffff"/>
-          <rect y="400" width="900" height="200" fill="#ffffff"/>
-          <circle cx="450" cy="300" r="180" fill="#bc3a3a"/>
-        </svg>
-      </div>
-      <div class="flag-watermark" style="right: 6%;">
-        <svg viewBox="0 0 900 630" width="380" height="266">
-          <rect width="900" height="630" fill="#4f9b4f"/>
-          <polygon points="450,60 850,315 450,570 50,315" fill="#e8c44a"/>
-          <circle cx="450" cy="315" r="140" fill="#2b4d8f"/>
-          <path d="M310,315 a140,140 0 0 1 280,0" fill="none" stroke="#ffffff" stroke-width="10"/>
-        </svg>
-      </div>
       <!-- Left side: Okinawa / Japan motifs — repeating seigaiha waves, hibiscus, shisa-inspired sun -->
       <svg width="380" height="100%" style="left:0; top:0; opacity:0.16;" preserveAspectRatio="none">
         <defs>
