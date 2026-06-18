@@ -22,13 +22,13 @@
     background-color: var(--bg);
   }
   #bg-decor {
-    position: absolute; top: 0; left: 0; right: 0; height: 100%; min-height: 100%;
-    pointer-events: none; overflow: visible; z-index: 0;
+    position: absolute; top: 0; left: 0;
+    pointer-events: none; z-index: 0;
     background-image: url('arvore-fundo.png');
     background-repeat: no-repeat;
     background-position: top center;
-    background-size: contain;
-    opacity: 0.9;
+    background-size: 100% auto;
+    opacity: 0.85;
   }
   #svg-canvas { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1; }
   #tree-root { position: relative; width: max-content; min-width: 100%; min-height: 100%; padding: 40px; z-index: 2; margin: 0 auto; }
@@ -397,10 +397,11 @@ function resizeBgDecor() {
   const root = document.getElementById('tree-root');
   const decor = document.getElementById('bg-decor');
   const wrap = document.getElementById('canvas-wrap');
-  if (!root || !decor) return;
+  if (!root || !decor || !wrap) return;
+  const w = Math.max(root.scrollWidth, wrap.clientWidth);
   const h = Math.max(root.scrollHeight, wrap.clientHeight);
+  decor.style.width = w + 'px';
   decor.style.height = h + 'px';
-  decor.querySelectorAll('svg').forEach(svg => svg.setAttribute('height', h));
 }
 
 function makeCard(p, depth) {
