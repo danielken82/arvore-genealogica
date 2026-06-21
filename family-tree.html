@@ -31,9 +31,22 @@
     opacity: 0.85;
   }
   #svg-canvas { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1; }
-  #tree-root { position: relative; width: max-content; min-width: 100%; min-height: 100%; padding: 40px; z-index: 2; margin: 0 auto; }
+  #tree-root { position: relative; width: max-content; min-width: 100%; min-height: 100%; padding: 40px; z-index: 2; margin: 0 auto; transition: transform 0.15s ease; }
   .gen-row { display: flex; justify-content: center; gap: 20px; position: relative; width: max-content; margin: 0 auto; }
   .gen-spacer { height: 70px; }
+  .card-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .vertical-list { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; border-top: 1px dashed var(--border); margin-top: 4px; align-items: stretch; }
+  .vertical-item { display: flex; flex-direction: column; gap: 4px; }
+  .person-card.compact {
+    width: auto; min-width: 150px; flex-direction: row; align-items: center; gap: 8px;
+    padding: 6px 10px; text-align: left;
+  }
+  .person-card.compact .avatar { width: 30px; height: 30px; font-size: 0.72rem; margin: 0; flex-shrink: 0; }
+  .person-card.compact .person-name { font-size: 0.74rem; margin-bottom: 0; line-height: 1.2; }
+  .person-card.compact .person-years { font-size: 0.6rem; }
+  .person-card.compact .gen-badge { width: 14px; height: 14px; font-size: 0.5rem; top: -5px; right: -5px; }
+  .person-card.compact .flag-badge { width: 16px; height: 16px; top: -5px; left: -5px; }
+  .vertical-item .vertical-list { margin-left: 18px; border-top: none; border-left: 1px dashed var(--border); padding-left: 8px; padding-top: 0; }
   .person-card { position: relative; width: 172px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 12px 12px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s, transform 0.15s; user-select: none; box-shadow: 0 2px 10px rgba(0,0,0,0.55); }
   .person-card:hover { background: var(--card-h); transform: translateY(-2px); }
   .person-card.selected { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
@@ -178,6 +191,11 @@
   <div class="sep"></div>
   <button onclick="saveToCloud()" style="background:var(--gold);color:#1a1612;border-radius:20px;font-weight:600;">💾 Salvar</button>
   <button onclick="showOpenModal()">📂 Abrir</button>
+  <div class="sep"></div>
+  <button onclick="zoomOut()" title="Diminuir zoom">−</button>
+  <span id="zoom-level" style="font-size:0.72rem;color:var(--muted);min-width:34px;text-align:center;">100%</span>
+  <button onclick="zoomIn()" title="Aumentar zoom">+</button>
+  <button onclick="zoomReset()" title="Restaurar zoom">⟲</button>
   <div class="sep"></div>
   <button onclick="exportData()" title="Exportar JSON">↓</button>
   <button onclick="importData()" title="Importar JSON">↑</button>
@@ -379,18 +397,63 @@ function orderBySpouse(ids) {
 }
 
 let cardPositions = {};
+let zoomLevel = 1;
+const ZOOM_MIN = 0.4, ZOOM_MAX = 1.5, ZOOM_STEP = 0.1;
+
+function applyZoom() {
+  const root = document.getElementById('tree-root');
+  if (!root) return;
+  root.style.transform = `scale(${zoomLevel})`;
+  root.style.transformOrigin = 'top center';
+  const label = document.getElementById('zoom-level');
+  if (label) label.textContent = Math.round(zoomLevel * 100) + '%';
+  requestAnimationFrame(() => { drawLines(); resizeBgDecor(); });
+}
+
+window.zoomIn = function() { zoomLevel = Math.min(ZOOM_MAX, +(zoomLevel + ZOOM_STEP).toFixed(2)); applyZoom(); };
+window.zoomOut = function() { zoomLevel = Math.max(ZOOM_MIN, +(zoomLevel - ZOOM_STEP).toFixed(2)); applyZoom(); };
+window.zoomReset = function() { zoomLevel = 1; applyZoom(); };
+
+const VERTICAL_FROM_DEPTH = 4; // 5th generation (0-indexed depth 4) and deeper render as a compact vertical list
 
 function renderTree() {
   const root = document.getElementById('tree-root');
   root.innerHTML = ''; cardPositions = {};
   const gens = buildGenerations();
-  Object.keys(gens).map(Number).sort((a,b)=>a-b).forEach((d, di) => {
+  const depths = Object.keys(gens).map(Number).sort((a,b)=>a-b);
+
+  depths.forEach((d, di) => {
+    if (d >= VERTICAL_FROM_DEPTH) return; // handled inside the row of their parent generation instead
     if (di > 0) { const sp = document.createElement('div'); sp.className = 'gen-spacer'; root.appendChild(sp); }
     const row = document.createElement('div'); row.className = 'gen-row';
-    orderBySpouse(gens[d]).forEach(id => { const p = get(id); if (p) row.appendChild(makeCard(p, d)); });
+    orderBySpouse(gens[d]).forEach(id => {
+      const p = get(id); if (!p) return;
+      const wrap = document.createElement('div'); wrap.className = 'card-col';
+      wrap.appendChild(makeCard(p, d));
+      // If this person's children belong to a "vertical" generation, render them as a compact list right under the card
+      if (d + 1 >= VERTICAL_FROM_DEPTH) {
+        const kids = people.filter(c => c.parentId === id);
+        if (kids.length) wrap.appendChild(makeVerticalList(kids, d + 1));
+      }
+      row.appendChild(wrap);
+    });
     root.appendChild(row);
   });
-  requestAnimationFrame(() => { drawLines(); resizeBgDecor(); });
+
+  requestAnimationFrame(() => { applyZoom(); });
+}
+
+// Compact vertical list of descendants for deep generations, recursively nesting further descendants.
+function makeVerticalList(peopleList, depth) {
+  const list = document.createElement('div'); list.className = 'vertical-list';
+  peopleList.forEach(p => {
+    const item = document.createElement('div'); item.className = 'vertical-item';
+    item.appendChild(makeCard(p, depth, true));
+    const kids = people.filter(c => c.parentId === p.id);
+    if (kids.length) item.appendChild(makeVerticalList(kids, depth + 1));
+    list.appendChild(item);
+  });
+  return list;
 }
 
 function resizeBgDecor() {
@@ -404,9 +467,9 @@ function resizeBgDecor() {
   decor.style.height = h + 'px';
 }
 
-function makeCard(p, depth) {
+function makeCard(p, depth, compact) {
   const card = document.createElement('div');
-  card.className = 'person-card' + (p.id === selectedId ? ' selected' : '');
+  card.className = 'person-card' + (compact ? ' compact' : '') + (p.id === selectedId ? ' selected' : '');
   card.dataset.id = p.id;
   card.onclick = () => selectPerson(p.id);
   const av = document.createElement('div'); av.className = 'avatar';
@@ -438,10 +501,17 @@ function drawLines() {
     cardPositions[id] = { x: r.left-wr.left+wrap.scrollLeft, y: r.top-wr.top+wrap.scrollTop, w: r.width, h: r.height };
   });
 
+  // Determine which people are rendered inside the compact vertical list (no branch line needed for those).
+  const gens = buildGenerations();
+  const depthOf = {};
+  Object.entries(gens).forEach(([d, ids]) => ids.forEach(id => depthOf[id] = +d));
+  const isVertical = id => (depthOf[id] || 0) >= VERTICAL_FROM_DEPTH;
+
   // Group children by their parent-pair so siblings share one connection point.
   const branchGroups = {};
   people.forEach(p => {
     if (!p.parentId) return;
+    if (isVertical(p.id)) return; // handled visually by the vertical list, not a branch line
     const parent = get(p.parentId); if (!parent) return;
     const key = parent.spouseId ? [parent.id, parent.spouseId].sort().join('-') : String(parent.id);
     if (!branchGroups[key]) branchGroups[key] = { parent, children: [] };
